@@ -447,19 +447,7 @@ export const AthleteForm = ({ onSuccess }) => {
           </div>
         </form>
 
-        {/* Info Note */}
-        <div className="mt-6 p-4 bg-blue-50 border-l-4 border-primary-500 rounded-r-lg">
-          <div className="flex items-start">
-            <AlertCircle className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div className="text-sm text-primary-800">
-              <p className="font-medium mb-1">Google Sheets Integration</p>
-              <p>
-                This demo saves data via Google Sheets API. 
-                Make sure you configure API credentials correctly.
-              </p>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );
