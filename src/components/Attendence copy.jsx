@@ -35,178 +35,145 @@ const mockAthletes = [
   }
 ];
 
+// Mock attendance data with morning and evening sessions
+const generateMockAttendanceData = () => {
+  const data = [];
+  const today = new Date();
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    mockAthletes.forEach(athlete => {
+      // Morning session
+      const morningStatus = Math.random();
+      let morningStatusValue;
+      if (morningStatus < 0.7) morningStatusValue = 'present';
+      else if (morningStatus < 0.9) morningStatusValue = 'absent';
+      else morningStatusValue = 'injury';
+
+      data.push({
+        date: dateStr,
+        KIUID: athlete.KIUID,
+        status: morningStatusValue,
+        session: 'morning'
+      });
+
+      // Evening session
+      const eveningStatus = Math.random();
+      let eveningStatusValue;
+      if (eveningStatus < 0.7) eveningStatusValue = 'present';
+      else if (eveningStatus < 0.9) eveningStatusValue = 'absent';
+      else eveningStatusValue = 'injury';
+
+      data.push({
+        date: dateStr,
+        KIUID: athlete.KIUID,
+        status: eveningStatusValue,
+        session: 'evening'
+      });
+    });
+  }
+  return data;
+};
+
 export function AthleteAttendance() {
-  const [athletes, setAthletes] = useState([]);
+  const [athletes, setAthletes] = useState(mockAthletes);
   const [attendanceData, setAttendanceData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedSession, setSelectedSession] = useState('morning'); // morning, evening
+  const [selectedSession, setSelectedSession] = useState('both'); // morning, evening, both
   const [filterNCOE, setFilterNCOE] = useState('all');
 
   const [atData, setAtData] = useState([]);
   const [athletesData, setAthletesData] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const [sessionAttendanceState, setSessionAttendanceState] = useState([]);
-
 
   useEffect(() => {
-    async function athletesDataFunc() {
+    // Initialize with mock data
+    // const mockData = generateMockAttendanceData();
+    // setAttendanceData(mockData);
+
+
+    async function athletesData() {
       setLoading(true);
       const loadedAthletes = await getAthletes();
       setAthletesData(loadedAthletes);
       console.log("Atheltes Data === ", loadedAthletes)
       setLoading(false);
     }
-    athletesDataFunc();
+    athletesData();
 
-    async function atDataFunc() {
+    async function atData() {
       setLoading(true);
       const athletesAttd = await getAtData();
-      console.log("Attendence Data === ", athletesAttd)
-      setAtData(athletesAttd);
+      console.log("Attendence Data === ", athletesAttd.slice(0, 40))
+      setAtData(athletesAttd.slice(0, 40));
 
       setLoading(false);
     }
-    atDataFunc();
+    atData();
 
-
+    
   }, []);
 
-  useEffect(() => {
-    if (!athletesData.length || !atData.length) return;
+  // Get unique NCOEs for filter
+  // const ncoeList = [...new Set(athletes.map(athlete => athlete["NCOE/KIA"]))];
 
-    const filtered = filterNCOE === 'all'
-      ? athletesData
-      : athletesData.filter(athlete => athlete["NCOE/KIA"] === filterNCOE);
-
-    const states = filtered.map(athlete => {
-      const record = atData.find(
-        r => r.Name === athlete["Athlete name"] && r.Date === selectedDate
-      );
-
-      return {
-        ...athlete,
-        morningStatus: record ? (record.Morning || "Not Marked") : "Not Marked",
-        eveningStatus: record ? (record.Evening || "Not Marked") : "Not Marked"
-      };
-    });
-
-    setSessionAttendanceState(states);
-  }, [selectedDate, filterNCOE, athletesData, atData]);
+  // const ncoeList = athletesData?.filter(each => each["NCOE/KIA"] === "NCOE")
+  // const kiaList = athletesData?.filter(each => each["NCOE/KIA"] === "KIA")
+   
+  // console.log("NOCe", ncoeList )
+  // console.log("KIA", kiaList )
 
 
   // Filter athletes based on NCOE selection
   const filteredAthletes = filterNCOE === 'all'
-    ? athletesData
-    : athletesData.filter(athlete => athlete["NCOE/KIA"] === filterNCOE);
+    ? athletes
+    : athletes.filter(athlete => athlete["NCOE/KIA"] === filterNCOE);
 
-  const markAttendance = (athleteId, statusType) => {
-    const status = statusType.charAt(0).toUpperCase() + statusType.slice(1);
-    setSessionAttendanceState((prev) =>
-      prev.map((athlete) =>
-        athlete.KIUID === athleteId
-          ? { ...athlete, [`${selectedSession}Status`]: status }
-          : athlete
-      )
-    );
+  // Get attendance for selected date and session
+  const getSessionAttendance = (date, session) => {
+    return filteredAthletes.map(athlete => {
+      const morningAttendance = attendanceData.find(
+        record => record.date === date && record.KIUID === athlete.KIUID && record.session === 'morning'
+      );
+      const eveningAttendance = attendanceData.find(
+        record => record.date === date && record.KIUID === athlete.KIUID && record.session === 'evening'
+      );
+
+      return {
+        ...athlete,
+        morningStatus: morningAttendance ? morningAttendance.status : 'unmarked',
+        eveningStatus: eveningAttendance ? eveningAttendance.status : 'unmarked'
+      };
+    });
   };
 
+  // Mark attendance for specific session
+  const markAttendance = (kiuid, status, session) => {
+    setAttendanceData(prev => {
+      const existing = prev.findIndex(
+        record => record.date === selectedDate && record.KIUID === kiuid && record.session === session
+      );
 
+      const newRecord = {
+        date: selectedDate,
+        KIUID: kiuid,
+        status,
+        session
+      };
 
-  const formatDate = (date) => {
-    const d = new Date(date);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-const handleBulkSave = async () => {
-  const SHEETDB_API = "1rhvmzb6t6d8j";
-  const currentDate = selectedDate;
-
-  try {
-    for (const athlete of sessionAttendanceState) {
-      const morningStatus = athlete.morningStatus || "Not Marked";
-      const eveningStatus = athlete.eveningStatus || "Not Marked";
-      const value = selectedSession === "morning" ? morningStatus : eveningStatus;
-
-      // Only proceed if the selected session status is not "Not Marked"
-      if (value === "Not Marked") {
-        console.log(`Skipping ${athlete["Athlete name"]} - No attendance recorded for ${selectedSession}`);
-        continue; // Skip to the next athlete
-      }
-
-      const checkUrl = `https://sheetdb.io/api/v1/${SHEETDB_API}/search?Name=${encodeURIComponent(
-        athlete["Athlete name"]
-      )}&Date=${encodeURIComponent(currentDate)}`;
-
-      const checkResponse = await fetch(checkUrl);
-      let existingData = [];
-      if (checkResponse.ok) {
-        existingData = await checkResponse.json();
-        console.log("Existing Data:", existingData);
-        console.log("Existing Data Column Names:", Object.keys(existingData[0] || {}));
-      }
-
-      if (existingData.length > 0) {
-        const existingRow = existingData[0];
-        const rowId = existingRow.ID; // Use the ID column
-
-        // Update existing row using PATCH with ID
-        const updateResponse = await fetch(`https://sheetdb.io/api/v1/${SHEETDB_API}/ID/${rowId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: {
-              [selectedSession === "morning" ? "Morning" : "Evening"]: value,
-            },
-          }),
-        });
-
-        const updateResult = await updateResponse.json();
-        console.log("Update Response:", updateResult);
-
-        if (!updateResponse.ok) {
-          throw new Error(`Failed to update row for ${athlete["Athlete name"]}: ${updateResult.error || updateResponse.statusText}`);
-        }
+      if (existing !== -1) {
+        const updated = [...prev];
+        updated[existing] = newRecord;
+        return updated;
       } else {
-        // Insert new row with dynamically generated ID
-        const newId = Date.now().toString(); // Temporary dynamic ID using timestamp
-        const insertResponse = await fetch(`https://sheetdb.io/api/v1/${SHEETDB_API}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: [
-              {
-                ID: newId,
-                Name: athlete["Athlete name"],
-                Date: currentDate,
-                Morning: selectedSession === "morning" ? value : "Not Marked",
-                Evening: selectedSession === "evening" ? value : "Not Marked",
-              },
-            ],
-          }),
-        });
-
-        const insertResult = await insertResponse.json();
-        console.log("Insert Response:", insertResult);
-
-        if (!insertResponse.ok) {
-          throw new Error(`Failed to insert row for ${athlete["Athlete name"]}: ${insertResult.error || insertResponse.statusText}`);
-        }
+        return [...prev, newRecord];
       }
-    }
-
-    alert("✅ Attendance saved successfully!");
-    // Reload attendance data after save
-    const athletesAttd = await getAtData();
-    setAtData(athletesAttd);
-  } catch (error) {
-    console.error("❌ Error saving attendance:", error);
-    alert("Error saving attendance. Check console for details.");
-  }
-};
+    });
+  };
 
   // Get chart data for attendance trends
   const getChartData = () => {
@@ -216,28 +183,23 @@ const handleBulkSave = async () => {
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      const dateStr = formatDate(date);
+      const dateStr = date.toISOString().split('T')[0];
 
-      const dayRecords = atData.filter(
-        record => record.Date === dateStr &&
-          filteredAthletes.some(a => a["Athlete name"] === record.Name)
+      const dayAttendance = attendanceData.filter(record =>
+        record.date === dateStr &&
+        (filterNCOE === 'all' || athletes.find(a => a.KIUID === record.KIUID && a["NCOE/KIA"] === filterNCOE))
       );
 
-      let morningPresent = 0;
-      let morningAbsent = 0;
-      let morningInjury = 0;
-      let eveningPresent = 0;
-      let eveningAbsent = 0;
-      let eveningInjury = 0;
+      const morningRecords = dayAttendance.filter(record => record.session === 'morning');
+      const eveningRecords = dayAttendance.filter(record => record.session === 'evening');
 
-      dayRecords.forEach(record => {
-        if (record.Morning === 'Attended') morningPresent++;
-        if (record.Morning === 'Absent') morningAbsent++;
-        if (record.Morning === 'Injury') morningInjury++;
-        if (record.Evening === 'Attended') eveningPresent++;
-        if (record.Evening === 'Absent') eveningAbsent++;
-        if (record.Evening === 'Injury') eveningInjury++;
-      });
+      const morningPresent = morningRecords.filter(record => record.status === 'present').length;
+      const morningAbsent = morningRecords.filter(record => record.status === 'absent').length;
+      const morningInjury = morningRecords.filter(record => record.status === 'injury').length;
+
+      const eveningPresent = eveningRecords.filter(record => record.status === 'present').length;
+      const eveningAbsent = eveningRecords.filter(record => record.status === 'absent').length;
+      const eveningInjury = eveningRecords.filter(record => record.status === 'injury').length;
 
       const totalSessions = filteredAthletes.length * 2; // 2 sessions per athlete
       const totalPresent = morningPresent + eveningPresent;
@@ -254,29 +216,19 @@ const handleBulkSave = async () => {
         percentage: totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0
       });
     }
+
     return last30Days;
   };
 
   // Get overall attendance statistics
   const getAttendanceStats = () => {
-    const filteredNames = new Set(filteredAthletes.map(a => a["Athlete name"]));
+    const totalRecords = attendanceData.filter(record =>
+      filterNCOE === 'all' || athletes.find(a => a.KIUID === record.KIUID && a["NCOE/KIA"] === filterNCOE)
+    );
 
-    let present = 0;
-    let absent = 0;
-    let injury = 0;
-
-    atData.forEach(record => {
-      if (filteredNames.has(record.Name)) {
-        if (record.Morning === 'Attended') present++;
-        else if (record.Morning === 'Absent') absent++;
-        else if (record.Morning === 'Injury') injury++;
-
-        if (record.Evening === 'Attended') present++;
-        else if (record.Evening === 'Absent') absent++;
-        else if (record.Evening === 'Injury') injury++;
-      }
-    });
-
+    const present = totalRecords.filter(record => record.status === 'present').length;
+    const absent = totalRecords.filter(record => record.status === 'absent').length;
+    const injury = totalRecords.filter(record => record.status === 'injury').length;
     const total = present + absent + injury;
 
     return {
@@ -289,23 +241,20 @@ const handleBulkSave = async () => {
     };
   };
 
-  if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
-  }
-
+  const sessionAttendance = getSessionAttendance(selectedDate);
   const chartData = getChartData();
   const stats = getAttendanceStats();
 
   // Pie chart data for attendance distribution
   const pieData = [
-    { name: 'Attended', value: stats.presentSessions, color: '#10B981' },
+    { name: 'Present', value: stats.presentSessions, color: '#10B981' },
     { name: 'Absent', value: stats.absentSessions, color: '#EF4444' },
     { name: 'Injury', value: stats.injurySessions, color: '#F59E0B' }
   ];
 
   // Status button component
   const StatusButton = ({ status, currentStatus, onClick, session, icon: Icon, color, label }) => {
-    const isActive = currentStatus?.toLowerCase() === status;
+    const isActive = currentStatus === status;
     return (
       <button
         onClick={() => onClick(status, session)}
@@ -327,41 +276,21 @@ const handleBulkSave = async () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center">
             <UserCheck className="w-8 h-8 text-blue-600 mr-3" />
-            <h2 className="text-2xl font-bold text-gray-900">Athlete Attendance</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Athlete Sparring Attendance</h2>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Session Selector */}
-            <div className="min-w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Select Session</label>
-              <select
-                value={selectedSession}
-                onChange={(e) => setSelectedSession(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="morning">Morning</option>
-                <option value="evening">Evening</option>
-              </select>
-            </div>
-
-
             {/* NCOE Filter */}
             <div className="min-w-48">
               <label className="block text-sm font-medium text-gray-700 mb-1">Filter by NCOE/KIA</label>
               <select
                 value={filterNCOE}
-                onChange={(e) => {
-
-                  console.log("target Values", e.target.value)
-
-                  setFilterNCOE(e.target.value)
-
-                }}
+                onChange={(e) => setFilterNCOE(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All NCOE/KIA</option>
-                {["NCOE", "KIA"].map((ncoe, i) => (
-                  <option key={i} value={ncoe}>{ncoe}</option>
+                {ncoeList.map(ncoe => (
+                  <option key={ncoe} value={ncoe}>{ncoe}</option>
                 ))}
               </select>
             </div>
@@ -397,7 +326,7 @@ const handleBulkSave = async () => {
             <Check className="w-8 h-8 text-green-600" />
             <div className="ml-4">
               <p className="text-2xl font-bold text-gray-900">{stats.presentSessions}</p>
-              <p className="text-gray-600">Attended Sessions</p>
+              <p className="text-gray-600">Present Sessions</p>
             </div>
           </div>
         </div>
@@ -439,7 +368,7 @@ const handleBulkSave = async () => {
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div className="flex-col md:flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900">
-                Attendance - {new Date(selectedDate).toLocaleDateString()}
+                Sparring Attendance - {new Date(selectedDate).toLocaleDateString()}
               </h3>
               <div className="text-sm text-gray-600 flex items-center space-x-4">
                 <span className="flex items-center">
@@ -454,8 +383,8 @@ const handleBulkSave = async () => {
             </div>
 
             <div className="space-y-6">
-              {sessionAttendanceState.map((athlete, i) => (
-                <div key={i} className="border border-gray-200 rounded-lg p-4">
+              {sessionAttendance.map(athlete => (
+                <div key={athlete.KIUID} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       {athlete["ATHLETE PHOTO"] ? (
@@ -476,62 +405,112 @@ const handleBulkSave = async () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <StatusButton
-                      status="attended"
-                      currentStatus={athlete[`${selectedSession}Status`]}
-                      onClick={(status) => markAttendance(athlete.KIUID, status, selectedSession)}
-                      icon={Check}
-                      color={{
-                        bg: 'bg-green-100',
-                        text: 'text-green-800',
-                        border: 'border-green-300'
-                      }}
-                      label="Attended"
-                    />
+                  {/* Morning Session */}
+                  <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
+                    <div className="">
+                      <div className="flex items-center">
+                        <Sun className="w-5 h-5 text-yellow-500 mr-2" />
+                        <span className="font-medium text-gray-900">Morning Sparring</span>
+                      </div>
 
-                    <StatusButton
-                      status="absent"
-                      currentStatus={athlete[`${selectedSession}Status`]}
-                      onClick={(status) => markAttendance(athlete.KIUID, status, selectedSession)}
-                      icon={X}
-                      color={{
-                        bg: 'bg-red-100',
-                        text: 'text-red-800',
-                        border: 'border-red-300'
-                      }}
-                      label="Absent"
-                    />
+                      <div className="flex items-center space-x-2 ">
+                        <StatusButton
+                          status="present"
+                          currentStatus={athlete.morningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'morning')}
+                          icon={Check}
+                          color={{
+                            bg: 'bg-green-100',
+                            text: 'text-green-800',
+                            border: 'border-green-300'
+                          }}
+                          label="Present"
+                        />
 
-                    <StatusButton
-                      status="injury"
-                      currentStatus={athlete[`${selectedSession}Status`]}
-                      onClick={(status) => markAttendance(athlete.KIUID, status, selectedSession)}
-                      icon={Heart}
-                      color={{
-                        bg: 'bg-yellow-100',
-                        text: 'text-yellow-800',
-                        border: 'border-yellow-300'
-                      }}
-                      label="Injury"
-                    />
+                        <StatusButton
+                          status="absent"
+                          currentStatus={athlete.morningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'morning')}
+                          icon={X}
+                          color={{
+                            bg: 'bg-red-100',
+                            text: 'text-red-800',
+                            border: 'border-red-300'
+                          }}
+                          label="Absent"
+                        />
+
+                        <StatusButton
+                          status="injury"
+                          currentStatus={athlete.morningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'morning')}
+                          icon={Heart}
+                          color={{
+                            bg: 'bg-yellow-100',
+                            text: 'text-yellow-800',
+                            border: 'border-yellow-300'
+                          }}
+                          label="Injury"
+                        />
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Evening Session */}
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="flex-col  items-center justify-between">
+                      <div className="flex items-center">
+                        <Moon className="w-5 h-5 text-blue-500 mr-2" />
+                        <span className="font-medium text-gray-900">Evening Sparring</span>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <StatusButton
+                          status="present"
+                          currentStatus={athlete.eveningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'evening')}
+                          icon={Check}
+                          color={{
+                            bg: 'bg-green-100',
+                            text: 'text-green-800',
+                            border: 'border-green-300'
+                          }}
+                          label="Present"
+                        />
+
+                        <StatusButton
+                          status="absent"
+                          currentStatus={athlete.eveningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'evening')}
+                          icon={X}
+                          color={{
+                            bg: 'bg-red-100',
+                            text: 'text-red-800',
+                            border: 'border-red-300'
+                          }}
+                          label="Absent"
+                        />
+
+                        <StatusButton
+                          status="injury"
+                          currentStatus={athlete.eveningStatus}
+                          onClick={(status) => markAttendance(athlete.KIUID, status, 'evening')}
+                          icon={Heart}
+                          color={{
+                            bg: 'bg-yellow-100',
+                            text: 'text-yellow-800',
+                            border: 'border-yellow-300'
+                          }}
+                          label="Injury"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={handleBulkSave}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
-              >
-                Save All Attendance
-              </button>
-            </div>
-
-
-            {sessionAttendanceState.length === 0 && (
+            {sessionAttendance.length === 0 && (
               <div className="text-center py-8">
                 <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No athletes found for the selected filters.</p>
@@ -580,21 +559,21 @@ const handleBulkSave = async () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Attended:</span>
+                      <span className="text-gray-600">Present:</span>
                       <span className="font-medium text-green-600">
-                        {sessionAttendanceState.filter(a => a.morningStatus === 'Attended').length}
+                        {sessionAttendance.filter(a => a.morningStatus === 'present').length}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Absent:</span>
                       <span className="font-medium text-red-600">
-                        {sessionAttendanceState.filter(a => a.morningStatus === 'Absent').length}
+                        {sessionAttendance.filter(a => a.morningStatus === 'absent').length}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Injury:</span>
                       <span className="font-medium text-yellow-600">
-                        {sessionAttendanceState.filter(a => a.morningStatus === 'Injury').length}
+                        {sessionAttendance.filter(a => a.morningStatus === 'injury').length}
                       </span>
                     </div>
                   </div>
@@ -607,21 +586,21 @@ const handleBulkSave = async () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Attended:</span>
+                      <span className="text-gray-600">Present:</span>
                       <span className="font-medium text-green-600">
-                        {sessionAttendanceState.filter(a => a.eveningStatus === 'Attended').length}
+                        {sessionAttendance.filter(a => a.eveningStatus === 'present').length}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Absent:</span>
                       <span className="font-medium text-red-600">
-                        {sessionAttendanceState.filter(a => a.eveningStatus === 'Absent').length}
+                        {sessionAttendance.filter(a => a.eveningStatus === 'absent').length}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Injury:</span>
                       <span className="font-medium text-yellow-600">
-                        {sessionAttendanceState.filter(a => a.eveningStatus === 'Injury').length}
+                        {sessionAttendance.filter(a => a.eveningStatus === 'injury').length}
                       </span>
                     </div>
                   </div>
@@ -633,11 +612,11 @@ const handleBulkSave = async () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Overall Attendance Rate:</span>
                 <span className="font-bold text-blue-600">
-                  {sessionAttendanceState.length > 0
+                  {sessionAttendance.length > 0
                     ? Math.round(((
-                      sessionAttendanceState.filter(a => a.morningStatus === 'Attended').length +
-                      sessionAttendanceState.filter(a => a.eveningStatus === 'Attended').length
-                    ) / (sessionAttendanceState.length * 2)) * 100)
+                      sessionAttendance.filter(a => a.morningStatus === 'present').length +
+                      sessionAttendance.filter(a => a.eveningStatus === 'present').length
+                    ) / (sessionAttendance.length * 2)) * 100)
                     : 0}%
                 </span>
               </div>
@@ -645,11 +624,11 @@ const handleBulkSave = async () => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Injury Rate:</span>
                 <span className="font-bold text-yellow-600">
-                  {sessionAttendanceState.length > 0
+                  {sessionAttendance.length > 0
                     ? Math.round(((
-                      sessionAttendanceState.filter(a => a.morningStatus === 'Injury').length +
-                      sessionAttendanceState.filter(a => a.eveningStatus === 'Injury').length
-                    ) / (sessionAttendanceState.length * 2)) * 100)
+                      sessionAttendance.filter(a => a.morningStatus === 'injury').length +
+                      sessionAttendance.filter(a => a.eveningStatus === 'injury').length
+                    ) / (sessionAttendance.length * 2)) * 100)
                     : 0}%
                 </span>
               </div>
@@ -665,7 +644,7 @@ const handleBulkSave = async () => {
           <div className="flex space-x-4 text-sm">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">Attended</span>
+              <span className="text-gray-600">Present</span>
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
@@ -691,8 +670,8 @@ const handleBulkSave = async () => {
                 labelFormatter={(date) => new Date(date).toLocaleDateString()}
                 formatter={(value, name) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
               />
-              <Bar dataKey="morningPresent" fill="#10B981" name="Morning Attended" />
-              <Bar dataKey="eveningPresent" fill="#059669" name="Evening Attended" />
+              <Bar dataKey="morningPresent" fill="#10B981" name="Morning Present" />
+              <Bar dataKey="eveningPresent" fill="#059669" name="Evening Present" />
               <Bar dataKey="morningAbsent" fill="#EF4444" name="Morning Absent" />
               <Bar dataKey="eveningAbsent" fill="#DC2626" name="Evening Absent" />
               <Bar dataKey="morningInjury" fill="#F59E0B" name="Morning Injury" />

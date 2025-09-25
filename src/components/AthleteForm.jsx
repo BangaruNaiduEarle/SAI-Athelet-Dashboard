@@ -307,11 +307,12 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date of Issued Warning
                 </label>
-                <input
-                  type="date"
-                  {...register('Date of issued warning ')}
+                <textarea
+                  type="text"
+                  {...register('issued warning')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+                  rows={3}
+               />
               </div>
 
               <div>
@@ -350,10 +351,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   S&C (Strength & Conditioning)
                 </label>
-                <input
+                <textarea
                   {...register('S&C')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="S&C specialist name"
+                  placeholder="S&C"
+                  rows={4}
                 />
               </div>
 
@@ -361,10 +363,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Physiotherapist
                 </label>
-                <input
+                <textarea
                   {...register('PHYSIOTHERAPIST')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Physiotherapist name"
+                  placeholder="Physiotherapist"
+                  rows={4}
                 />
               </div>
 
@@ -372,10 +375,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Psychology
                 </label>
-                <input
+                <textarea
                   {...register('PSYCHOLOGY')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Sports psychologist name"
+                  placeholder="Sports psychologist"
+                  rows={4}
                 />
               </div>
 
@@ -383,10 +387,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Physiology
                 </label>
-                <input
+                <textarea
                   {...register('PHYSIOLOGY')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Physiologist name"
+                  placeholder="Physiologist"
+                  rows={4}
                 />
               </div>
 
@@ -394,10 +399,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Anthropometry
                 </label>
-                <input
+                <textarea
                   {...register('ANTHROPOMETRY')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Anthropometry specialist name"
+                  placeholder="Anthropometry"
+                  rows={4}
                 />
               </div>
 
@@ -405,10 +411,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nutrition
                 </label>
-                <input
+                <textarea
                   {...register('NUTRITION')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Nutritionist name"
+                  placeholder="Nutritionist"
+                  rows={4}
                 />
               </div>
 
@@ -416,10 +423,11 @@ export const AthleteForm = ({ onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Biomechanics
                 </label>
-                <input
+                <textarea
                   {...register('BIOMECHANICS')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Biomechanics specialist name"
+                  placeholder="Biomechanics"
+                  rows={4}
                 />
               </div>
             </div>

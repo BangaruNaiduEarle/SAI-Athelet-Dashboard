@@ -1,5 +1,7 @@
 export async function submitAthleteData(formData) {
-  const WEB_APP_URL = "https://sheetdb.io/api/v1/3mg0d4jpi5l8m?sheet=Data Sheet"; 
+  // const WEB_APP_URL = "https://sheetdb.io/api/v1/3mg0d4jpi5l8m?sheet=Data Sheet";
+  
+  const WEB_APP_URL  = "https://sheetdb.io/api/v1/1rhvmzb6t6d8j?sheet=Data Sheet"
 
   try {
     const response = await fetch(WEB_APP_URL, {
@@ -21,7 +23,9 @@ export async function submitAthleteData(formData) {
 }
 
 export async function getAthleteData() {
-  const WEB_APP_URL = "https://sheetdb.io/api/v1/3mg0d4jpi5l8m?sheet=Data Sheet"; 
+  // const WEB_APP_URL = "https://sheetdb.io/api/v1/3mg0d4jpi5l8m?sheet=Data Sheet"; 
+    const WEB_APP_URL  = "https://sheetdb.io/api/v1/1rhvmzb6t6d8j?sheet=Data Sheet"
+
 
   try {
     const response = await fetch(WEB_APP_URL, {
@@ -36,6 +40,31 @@ export async function getAthleteData() {
 
     const result = await response.json();
     console.log("Athelte DAta:", result)
+    return result;
+  } catch (error) {
+    console.error("Error submitting data:", error);
+    throw error;
+  }
+}
+
+export async function getAtData() {
+  // const WEB_APP_URL = "https://sheetdb.io/api/v1/3mg0d4jpi5l8m?sheet=Sheet1"; 
+    const WEB_APP_URL  = "https://sheetdb.io/api/v1/1rhvmzb6t6d8j?sheet=Sheet1"
+
+
+  try {
+    const response = await fetch(WEB_APP_URL, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+     
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("At DAta:", result)
     return result;
   } catch (error) {
     console.error("Error submitting data:", error);

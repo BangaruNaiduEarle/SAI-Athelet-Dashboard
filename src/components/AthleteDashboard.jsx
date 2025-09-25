@@ -135,17 +135,17 @@ export const AthleteDashboard = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date of Birth:</span>
                   <span className="font-medium">
-                    {new Date(selectedAthlete["DOB"]).toLocaleDateString()}
+                    {selectedAthlete["DOB"]}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Weight:</span>
-                  <span className="font-medium">{selectedAthlete["WT"]} kg</span>
+                  <span className="font-medium">{selectedAthlete["WT"]}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Joining Date:</span>
                   <span className="font-medium">
-                    {new Date(selectedAthlete["Date of Joining in NCOE"]).toLocaleDateString()}
+                    {selectedAthlete["Date of Joining in NCOE"]}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -219,8 +219,8 @@ export const AthleteDashboard = () => {
 
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
                   <p className="text-red-800 font-medium">
-                    Warning issued on:{" "}
-                    {new Date(selectedAthlete["Date of issued warning "]).toLocaleDateString()}
+                    Warning issued:{" "}
+                    {selectedAthlete["Date of issued warning "]}
                   </p>
                 </div>
               </div>
